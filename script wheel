@@ -1,0 +1,82 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Script_Wheel : MonoBehaviour {
+    private Rigidbody rb;
+
+    public bool wheelfl;
+    public bool wheelfr;
+    public bool wheelrl;
+    public bool wheelrr;
+
+    //suspension physics variables
+    public float restlength;
+    public float springtravel;
+    public float springstiffness;
+    public float damperstiffness;
+
+
+    private float maxlength;
+    private float minlength;
+    private float springlength;
+    private float springforce;
+    private float lastlength;
+    private float damperforce;
+    private float springvelocity;
+
+    //wheel
+    public float steerangle;
+    public float steertime;
+
+    private Vector3 suspensionforce;
+    private float wheelangle;
+    private Vector3 wheelvelocityls;
+    private float forcex;
+    private float forcey;
+
+
+    //wheel
+    public float wheelradius;
+
+
+    // Start is called before the first frame update
+    void Start() {
+        rb = transform.root.GetComponent<Rigidbody>();
+
+        minlength = maxlength - springtravel;
+        maxlength = restlength + springtravel;
+    }
+
+    void Update() {
+        wheelangle = Mathf.Lerp(wheelangle, steerangle, steertime * Time.deltaTime); //fixes snapping when changing steering inputs rapidly
+        transform.localRotation = Quaternion.Euler(Vector3.up * wheelangle); //adding steering angle to current rotation dependent on how much the steer button is pressed
+
+        Debug.DrawRay(transform.position, -transform.up * (springlength + wheelradius), Color.green);
+    }
+
+    // Update is called once per frame
+    void FixedUpdate() {
+        //raycast
+        
+        if (Physics.Raycast(transform.position, -transform.up, out RaycastHit hit, maxlength + wheelradius)) {
+            lastlength = springlength;
+            springlength = hit.distance - wheelradius;
+            springlength = Mathf.Clamp(springlength, minlength, maxlength);
+            springvelocity = lastlength - springlength / Time.fixedDeltaTime; //velocity = distance/time
+            springforce = springstiffness * (restlength - springlength);
+            damperforce = damperstiffness * springvelocity;
+
+            suspensionforce = (springforce + damperforce) * transform.up;
+
+            wheelvelocityls = transform.InverseTransformDirection(rb.GetPointVelocity(hit.point)); //applies wheel velocity force in wheels local space
+            forcex = Input.GetAxis("Vertical") * springforce;
+            forcey = wheelvelocityls.x * springforce;
+
+
+            rb.AddForceAtPosition(suspensionforce + (forcex * transform.forward) + (forcey * -transform.right), hit.point);//applies force on each wheel
+
+
+        }
+    }
+}

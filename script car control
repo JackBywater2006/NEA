@@ -1,0 +1,46 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Script_Car_Control : MonoBehaviour {
+    public Script_Wheel[] wheels;
+
+    //Car specs
+    public float wheelbase;
+    public float turnradius;
+    public float reartrack;
+
+    //inputs
+    public float steerinput;
+
+    private float ackermanleft;
+    private float ackermanright;
+
+    // Start is called before the first frame update
+    void Start() {
+        
+    }
+
+    // Update is called once per frame
+    void Update() {
+        steerinput = Input.GetAxis("Horizontal");
+
+        if (steerinput > 0) {           //right
+            ackermanleft = Mathf.Rad2Deg * Mathf.Atan(wheelbase / (turnradius + (reartrack / 2))) * steerinput;
+            ackermanright = Mathf.Rad2Deg * Mathf.Atan(wheelbase / (turnradius - (reartrack / 2))) * steerinput;
+        } else if (steerinput < 0) {      //left
+            ackermanleft = Mathf.Rad2Deg * Mathf.Atan(wheelbase / (turnradius - (reartrack / 2))) * steerinput;
+            ackermanright = Mathf.Rad2Deg * Mathf.Atan(wheelbase / (turnradius + (reartrack / 2))) * steerinput;
+        } else {
+            ackermanleft = 0;
+            ackermanright = 0;
+        }
+
+        foreach (Script_Wheel w in wheels) {
+            if (w.wheelfl)
+                w.steerangle = ackermanleft;
+            if (w.wheelfr)
+                w.steerangle = ackermanright;
+        }
+    }
+}
